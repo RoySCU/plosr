@@ -40,6 +40,9 @@ namespace polsr {
 /// Scaling factor used in RFC 3626.
 #define OLSR_C 0.0625
 
+/// Scaling factor used in RFC 5497.
+#define ETX_C 0.0009765625
+
 ///
 /// \brief Converts a decimal number of seconds to the mantissa/exponent format.
 ///
@@ -94,6 +97,47 @@ EmfToSeconds (uint8_t olsrFormat)
   return OLSR_C * (1 + a/16.0) * (1 << b);
 }
 
+//测试添加ETX
+    
+uint8_t
+EtxValToEmf (double etxval)
+{
+    
+    int a, b = 0;
+        
+    for (b = 0; (etxval/ETX_C) >= (1 << b); ++b)
+        ;
+        
+    NS_ASSERT ((etxval/ETX_C) < (1 << b));
+    b--;
+    NS_ASSERT ((etxval/ETX_C) >= (1 << b));
+        
+    double tmp = 8*(etxval/(ETX_C*(1<<b))-1);
+    
+    a = (int) std::ceil (tmp);
+    
+    if (a == 8)
+    {
+        b += 1;
+        a = 0;
+    }
+    
+    NS_ASSERT (a >= 0 && a < 8);
+    NS_ASSERT (b >= 0 && b < 32);
+        
+    
+    return (uint8_t)((b << 3) | a);
+}
+
+double
+EmfToEtxVal (uint8_t olsrFormat)
+{
+    
+    int b = (olsrFormat >> 3);
+    int a = (olsrFormat & 0x7);
+   
+    return ETX_C * (1 + a/8.0) * (1 << b);
+}
 
 
 // ---------------- OLSR Packet -------------------------------
@@ -337,7 +381,9 @@ MessageHeader::Hello::GetSerializedSize (void) const
        iter != this->linkMessages.end (); iter++)
     {
       const LinkMessage &lm = *iter;
-      size += 4;
+      //size += 4;
+      //添加ETX、RLQ消息
+      size += 6;
       size += IPV4_ADDRESS_SIZE * lm.neighborInterfaceAddresses.size ();
     }
   return size;
@@ -375,8 +421,12 @@ MessageHeader::Hello::Serialize (Buffer::Iterator start) const
       // next "Link Code" field (or - if there are no more link types
       // - the end of the message).
       //16BIT 大小
-      i.WriteHtonU16 (4 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
-      
+      //i.WriteHtonU16 (4 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
+      //加入ETX信息
+      i.WriteHtonU16 (6 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
+      //添加ETX、RLQ消息
+      i.WriteU8 (lm.RLQ);   
+      i.WriteU8 (lm.ETX);
       
       for (std::vector<Ipv4Address>::const_iterator neigh_iter = lm.neighborInterfaceAddresses.begin ();
            neigh_iter != lm.neighborInterfaceAddresses.end (); neigh_iter++)
@@ -412,12 +462,16 @@ MessageHeader::Hello::Deserialize(Buffer::Iterator start, uint32_t messageSize)
   while (helloSizeLeft)
     {
       LinkMessage lm;
-      NS_ASSERT (helloSizeLeft >= 4);
+      NS_ASSERT (helloSizeLeft >= 6);
       lm.linkCode = i.ReadU8 ();
       i.ReadU8 (); // Reserved
       uint16_t lmSize = i.ReadNtohU16 ();
-      NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
-      for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
+      //添加ETX、RLQ消息
+      lm.RLQ = i.ReadU8 ();
+      lm.ETX = i.ReadU8 ();
+      //添加16bit数据 改为-6
+      NS_ASSERT ((lmSize - 6) % IPV4_ADDRESS_SIZE == 0);
+      for (int n = (lmSize - 6) / IPV4_ADDRESS_SIZE; n; --n)
         {
           lm.neighborInterfaceAddresses.push_back (Ipv4Address (i.ReadNtohU32 ()));
         }
