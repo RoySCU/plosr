@@ -137,6 +137,13 @@
 /// Maximum number of addresses advertised on a message.
 #define OLSR_MAX_ADDRS          64
 
+///Constants for  ETX Metrics
+#define POLSR_MAXIMUM_METRIC 65535
+#define POLSR_DEFAULT_METRIC 4096
+#define POLSR_UNDEFINED_LQ 0
+#define POLSR_ETX_SEQNO_RESTART_DETECTION 256
+
+#define POLSR_ETX_UPDATE_TIME   Time (7 * OLSR_REFRESH_INTERVAL)
 
 namespace ns3 {
 

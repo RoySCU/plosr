@@ -268,7 +268,8 @@ private:
   void TopologyTupleTimerExpire (Ipv4Address destAddr, Ipv4Address lastAddr);
   void IfaceAssocTupleTimerExpire (Ipv4Address ifaceAddr);
   void AssociationTupleTimerExpire (Ipv4Address gatewayAddr, Ipv4Address networkAddr, Ipv4Mask netmask);
-
+  //添加ETX
+  void EtxTimerExpire (Ipv4Address neighborIfaceAddr);
   void IncrementAnsn ();
 
   /// A list of pending messages which are buffered awaiting for being sent.
@@ -367,8 +368,6 @@ private:
     return d_n;
   }
   double NextPositionDistanse(const PositionTuple &pos){
-  
-    PositionTuple pos = neighbor.neighborPosition;
     double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds();
     double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds();
     

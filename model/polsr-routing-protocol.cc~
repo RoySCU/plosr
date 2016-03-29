@@ -137,6 +137,13 @@
 /// Maximum number of addresses advertised on a message.
 #define OLSR_MAX_ADDRS          64
 
+///Constants for  ETX Metrics
+#define POLSR_MAXIMUM_METRIC 65535
+#define POLSR_DEFAULT_METRIC 4096
+#define POLSR_UNDEFINED_LQ 0
+#define POLSR_ETX_SEQNO_RESTART_DETECTION 256
+
+#define POLSR_ETX_UPDATE_TIME   Time (7 * OLSR_REFRESH_INTERVAL)
 
 namespace ns3 {
 
@@ -2210,7 +2217,7 @@ RoutingProtocol::LinkSensing (const polsr::MessageHeader &msg,
         double d_n = sqrt(d_n_x*d_n_x+d_n_y*d_n_y);
         double v_predict=d_n-d;
         d_predict = d_n;
-        if(d_n > 250 && v_predict>0){
+        if(d_n > 200 && v_predict>0){
           //std::cout<<"TIME:\t"<<Simulator::Now ().GetSeconds ()<<std::endl;
           //std::cout<<"d next: "<<d_n
           //<<"v_predict:"<<v_predict
@@ -2218,7 +2225,7 @@ RoutingProtocol::LinkSensing (const polsr::MessageHeader &msg,
           LinkTuple *tuple = m_state.FindLinkTuple (senderIface);
           RemoveLinkTuple (*tuple);
         }
-        else if(d_n + (d_n-d) >250){
+        else if(d_n + (d_n-d) >200){
           //std::cout<<"TIME:\t"<<Simulator::Now ().GetSeconds ()<<std::endl;
           //std::cout<<"d next: "<<d_n
           //<<"v_predict:"<<v_predict
