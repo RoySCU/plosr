@@ -77,14 +77,16 @@ namespace ns3 { namespace polsr {
                   Time asymTime;
                   /// Time at which this tuple expires and must be removed.
                   Time time;
+                  //物理距离
+                  double distanse;
                   //添加ETX、RLQ消息
-                  double DLQ;
-                  double RLQ;
-                  double ETX;
-                  int numHelloReceived;
-                  int numHelloSupposed;
-                  uint16_t lastPackSeqNum;
-                  uint16_t InitPackSeqNum;
+                  //double DLQ;
+                  //double RLQ;
+                  //double ETX;
+                  //int numHelloReceived;
+                  //int numHelloSupposed;
+                  //uint16_t lastPackSeqNum;
+                  //uint16_t InitPackSeqNum;
                 };
 
                 static inline bool
@@ -170,7 +172,9 @@ namespace ns3 { namespace polsr {
                   /// Time at which this tuple expires and must be removed.
                   Time expirationTime; // previously called 'time_'
                   //添加 ETX
-                  double ETX;
+                  //double ETX;
+                  //物理距离
+                  double distanse;
                 };
 
                 static inline std::ostream&
