@@ -467,17 +467,14 @@ MessageHeader::Hello::Deserialize(Buffer::Iterator start, uint32_t messageSize)
       lm.linkCode = i.ReadU8 ();
       i.ReadU8 (); // Reserved
       uint16_t lmSize = i.ReadNtohU16 ();
-      distanse = i.ReadNtohU16 ();
       //添加ETX、RLQ消息
       //lm.RLQ = i.ReadU8 ();
       //lm.ETX = i.ReadU8 ();
       //添加16bit数据 改为-6
       //NS_ASSERT ((lmSize - 6) % IPV4_ADDRESS_SIZE == 0);
       //for (int n = (lmSize - 6) / IPV4_ADDRESS_SIZE; n; --n)
-      //NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
-      //for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
-      NS_ASSERT ((lmSize - 6) % IPV4_ADDRESS_SIZE == 0);
-      for (int n = (lmSize - 6) / IPV4_ADDRESS_SIZE; n; --n)
+      NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
+      for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
         {
           lm.neighborInterfaceAddresses.push_back (Ipv4Address (i.ReadNtohU32 ()));
         }
