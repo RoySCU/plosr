@@ -602,10 +602,10 @@ RoutingProtocol::MprComputation ()
       if (neighbor->status == NeighborTuple::STATUS_SYM) // I think that we need this check
       {
         //超过200 则存入另一个邻居集
-        if(NextPositionDistanse(*neighbor)){
+        if(NextPositionDistance(*neighbor)){
           N_FAR.push_back (*neighbor);
         }
-          //std::cout<<"distance: "<<NextPositionDistanse(*neighbor)<<std::endl;
+          //std::cout<<"distance: "<<NextPositionDistance(*neighbor)<<std::endl;
         N.push_back (*neighbor);
       }
     }
@@ -958,7 +958,8 @@ RoutingProtocol::RoutingTableComputation ()
                   AddEntry (link_tuple.neighborIfaceAddr,
                             link_tuple.neighborIfaceAddr,
                             link_tuple.localIfaceAddr,
-                            1);
+                            1,
+                            link_tuple.distance);
                   if (link_tuple.neighborIfaceAddr == nb_tuple.neighborMainAddr)
                     {
                       nb_main_addr = true;
@@ -989,7 +990,8 @@ RoutingProtocol::RoutingTableComputation ()
               AddEntry (nb_tuple.neighborMainAddr,
                         lt->neighborIfaceAddr,
                         lt->localIfaceAddr,
-                        1);
+                        1,
+                        nb_tuple.distance);
             }
         }
     }
@@ -1063,25 +1065,24 @@ RoutingProtocol::RoutingTableComputation ()
         {
           NS_LOG_LOGIC ("Adding routing entry for two-hop neighbor.");
           //找到邻居表项
-          NeighborTuple* neighbor = m_state.FindNeighborTuple(entry.nextAddr);
+          //NeighborTuple* neighbor = m_state.FindNeighborTuple(entry.nextAddr);
           //if(Ipv4Address("10.0.0.1") == m_mainAddress){
             RoutingTableEntry last_entry;
             bool found_2hop_Entry = Lookup (nb2hop_tuple.twoHopNeighborAddr, last_entry);
             //如果原本存在entry
             if(found_2hop_Entry){
-              //找到邻居表项
-              NeighborTuple* last_neighbor = m_state.FindNeighborTuple(last_entry.nextAddr);
               //如果距离更小 则替换
-              if(NextPositionDistanse(*last_neighbor)>NextPositionDistanse(*neighbor)){
+              if(last_entry.gps_distance>nb2hop_tuple.distance){
                 AddEntry (nb2hop_tuple.twoHopNeighborAddr,
                     entry.nextAddr,
                     entry.interface,
-                    2);
+                    2,
+                    nb2hop_tuple.distance);
               }
               //NS_LOG_UNCOND("last twoHopNeighborAddr:"<<nb2hop_tuple.twoHopNeighborAddr
-              //<<"nextAddr:"<<last_entry.nextAddr<<"distance:"<<NextPositionDistanse(*last_neighbor));
+              //<<"nextAddr:"<<last_entry.nextAddr<<"distance:"<<NextPositionDistance(*last_neighbor));
               //NS_LOG_UNCOND("twoHopNeighborAddr:"<<nb2hop_tuple.twoHopNeighborAddr
-              //<<"nextAddr:"<<entry.nextAddr<<"distance:"<<NextPositionDistanse(*neighbor));
+              //<<"nextAddr:"<<entry.nextAddr<<"distance:"<<NextPositionDistance(*neighbor));
             }
             //如果原本不存在entry
             else{
@@ -1089,17 +1090,18 @@ RoutingProtocol::RoutingTableComputation ()
               AddEntry (nb2hop_tuple.twoHopNeighborAddr,
                   entry.nextAddr,
                   entry.interface,
-                  2);
+                  2,
+                  nb2hop_tuple.distance);
             }
           //}
           
         }
       else
-        {
-          NS_LOG_LOGIC ("NOT adding routing entry for two-hop neighbor ("
-                        << nb2hop_tuple.twoHopNeighborAddr
-                        << " not found in the routing table)");
-        }
+      {
+        NS_LOG_LOGIC ("NOT adding routing entry for two-hop neighbor ("
+                      << nb2hop_tuple.twoHopNeighborAddr
+                      << " not found in the routing table)");
+      }
     }
   for (uint32_t h = 2;; h++)
     {
@@ -1137,7 +1139,8 @@ RoutingProtocol::RoutingTableComputation ()
               AddEntry (topology_tuple.destAddr,
                         lastAddrEntry.nextAddr,
                         lastAddrEntry.interface,
-                        h + 1);
+                        h + 1,
+                        10000);
               added = true;
             }
           else
@@ -1177,7 +1180,8 @@ RoutingProtocol::RoutingTableComputation ()
           AddEntry (tuple.ifaceAddr,
                     entry1.nextAddr,
                     entry1.interface,
-                    entry1.distance);
+                    entry1.distance,
+                    entry1.gps_distance);
         }
     }
 
@@ -1840,7 +1844,9 @@ RoutingProtocol::SendHello ()
       linkMessage.neighborInterfaceAddresses.insert
         (linkMessage.neighborInterfaceAddresses.end (),
         interfaces.begin (), interfaces.end ());
-
+      //设置链路距离
+      NeighborTuple* neighbor = m_state.FindNeighborTuple(link_tuple->neighborIfaceAddr);
+      linkMessage.setDistance(link_tuple->distance);
       linkMessages.push_back (linkMessage);
     }
   NS_LOG_DEBUG ("OLSR HELLO message size: " << int (msg.GetSerializedSize ())
@@ -2088,6 +2094,16 @@ RoutingProtocol::LinkSensing (const polsr::MessageHeader &msg,
       newLinkTuple.localIfaceAddr = receiverIface;
       newLinkTuple.symTime = now - Seconds (1);
       newLinkTuple.time = now + msg.GetVTime ();
+      //链路距离
+      Vector item_pos = hello.GetPosition();
+      Vector item_speed = hello.GetSpeed();
+      PositionTuple pos_t;
+      pos_t.gps_x = item_pos.x;
+      pos_t.gps_y = item_pos.y;
+      pos_t.speed_x = item_speed.x;
+      pos_t.speed_y = item_speed.y;
+      newLinkTuple.distance = NextPositionDistance(pos_t);
+      //链路距离 end
       link_tuple = &m_state.InsertLinkTuple (newLinkTuple);
       created = true;
       NS_LOG_LOGIC ("Existing link tuple did not exist => creating new one");
@@ -2363,6 +2379,8 @@ RoutingProtocol::PopulateTwoHopNeighborSet (const polsr::MessageHeader &msg,
                       new_nb2hop_tuple.neighborMainAddr = msg.GetOriginatorAddress ();
                       new_nb2hop_tuple.twoHopNeighborAddr = nb2hop_addr;
                       new_nb2hop_tuple.expirationTime = now + msg.GetVTime ();
+                      //2跳节点距离
+                      new_nb2hop_tuple.distance = linkMessage->distance+NextPositionDistance(hello);
                       AddTwoHopNeighborTuple (new_nb2hop_tuple);
                       // Schedules nb2hop tuple deletion
                       m_events.Track (Simulator::Schedule (DELAY (new_nb2hop_tuple.expirationTime),
@@ -2372,6 +2390,8 @@ RoutingProtocol::PopulateTwoHopNeighborSet (const polsr::MessageHeader &msg,
                     }
                   else
                     {
+                      //2跳节点距离
+                      nb2hop_tuple->distance = linkMessage->distance+NextPositionDistance(hello);
                       nb2hop_tuple->expirationTime = now + msg.GetVTime ();
                     }
                 }
@@ -2568,6 +2588,7 @@ RoutingProtocol::LinkTupleAdded (const LinkTuple &tuple, uint8_t willingness,con
       nb_tuple.status = NeighborTuple::STATUS_NOT_SYM;
     }
   nb_tuple.neighborPosition = pos;
+  nb_tuple.distance = NextPositionDistance(pos);
   AddNeighborTuple (nb_tuple);
 }
 
@@ -2617,6 +2638,7 @@ RoutingProtocol::LinkTupleUpdated (const LinkTuple &tuple, uint8_t willingness,c
 
       bool hasSymmetricLink = false;
       nb_tuple->neighborPosition = pos;
+      nb_tuple->distance = NextPositionDistance(pos);
       const LinkSet &linkSet = m_state.GetLinks ();
       for (LinkSet::const_iterator it = linkSet.begin ();
            it != linkSet.end (); it++)
@@ -3413,7 +3435,8 @@ void
 RoutingProtocol::AddEntry (Ipv4Address const &dest,
                            Ipv4Address const &next,
                            uint32_t interface,
-                           uint32_t distance)
+                           uint32_t distance,
+                           uint16_t gps_distance)
 {
   NS_LOG_FUNCTION (this << dest << next << interface << distance << m_mainAddress);
 
@@ -3426,13 +3449,15 @@ RoutingProtocol::AddEntry (Ipv4Address const &dest,
   entry.nextAddr = next;
   entry.interface = interface;
   entry.distance = distance;
+  entry.gps_distance = gps_distance;
 }
 
 void
 RoutingProtocol::AddEntry (Ipv4Address const &dest,
                            Ipv4Address const &next,
                            Ipv4Address const &interfaceAddress,
-                           uint32_t distance)
+                           uint32_t distance,
+                           uint16_t gps_distance)
 {
   NS_LOG_FUNCTION (this << dest << next << interfaceAddress << distance << m_mainAddress);
 
@@ -3446,13 +3471,13 @@ RoutingProtocol::AddEntry (Ipv4Address const &dest,
         {
           if (m_ipv4->GetAddress (i,j).GetLocal () == interfaceAddress)
             {
-              AddEntry (dest, next, i, distance);
+              AddEntry (dest, next, i, distance,gps_distance);
               return;
             }
         }
     }
   NS_ASSERT (false); // should not be reached
-  AddEntry (dest, next, 0, distance);
+  AddEntry (dest, next, 0, distance,gps_distance);
 }
 
 

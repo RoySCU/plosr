@@ -78,7 +78,7 @@ namespace ns3 { namespace polsr {
                   /// Time at which this tuple expires and must be removed.
                   Time time;
                   //物理距离
-                  double distanse;
+                  uint16_t distance;
                   //添加ETX、RLQ消息
                   //double DLQ;
                   //double RLQ;
@@ -136,6 +136,7 @@ namespace ns3 { namespace polsr {
                   /// Main address of a neighbor node.
                   Ipv4Address neighborMainAddr;
                   PositionTuple neighborPosition;
+                  uint16_t distance;
                   /// Neighbor Type and Link Type at the four less significative digits.
                   enum Status {
                     STATUS_NOT_SYM = 0, // "not symmetric"
@@ -174,7 +175,7 @@ namespace ns3 { namespace polsr {
                   //添加 ETX
                   //double ETX;
                   //物理距离
-                  double distanse;
+                  uint16_t distance;
                 };
 
                 static inline std::ostream&

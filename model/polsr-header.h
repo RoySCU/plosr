@@ -265,37 +265,13 @@ public:
       uint8_t linkCode;
       std::vector<Ipv4Address> neighborInterfaceAddresses;
       //距离
-      uint16_t distanse;
-      /*//测试ETX路由判据
-      uint8_t RLQ;//RLQ
-      uint8_t ETX;//ETX
-      void SetETX (double etxval)
-        {
-            this->ETX = EtxValToEmf (etxval);
-        }
-        
-      double GetETX () const
-        {
-            if (EmfToEtxVal (this->ETX) <= 0) {
-                return POLSR_MAXIMUM_METRIC;
-            }
-
-            return  EmfToEtxVal (this->ETX);
-        }
-        
-      void SetRLQ (double etxval)
-        {
-            this->RLQ = EtxValToEmf (etxval);
-        }
-        
-      double GetRLQ () const
-        {
-            if (EmfToEtxVal (this->RLQ) <= 0) {
-                return POLSR_UNDEFINED_LQ;
-            }
-            
-            return  EmfToEtxVal (this->RLQ);
-        }*/
+      uint16_t distance;
+      void setDistance(uint16_t distance){
+        this->distance = distance;
+      };
+      uint16_t getDistance(){
+        return distance;
+      };
     };
 
     uint8_t hTime;

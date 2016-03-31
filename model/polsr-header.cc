@@ -381,9 +381,9 @@ MessageHeader::Hello::GetSerializedSize (void) const
        iter != this->linkMessages.end (); iter++)
     {
       const LinkMessage &lm = *iter;
-      size += 4;
+      //size += 4;
       //添加ETX、RLQ消息
-      //size += 6;
+      size += 6;
       size += IPV4_ADDRESS_SIZE * lm.neighborInterfaceAddresses.size ();
     }
   return size;
@@ -421,13 +421,14 @@ MessageHeader::Hello::Serialize (Buffer::Iterator start) const
       // next "Link Code" field (or - if there are no more link types
       // - the end of the message).
       //16BIT 大小
-      i.WriteHtonU16 (4 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
+      //i.WriteHtonU16 (4 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
+      i.WriteHtonU16 (6 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
       //加入ETX信息
-      //i.WriteHtonU16 (6 + lm.neighborInterfaceAddresses.size () * IPV4_ADDRESS_SIZE);
+      //
       //添加ETX、RLQ消息
       //i.WriteU8 (lm.RLQ);   
       //i.WriteU8 (lm.ETX);
-      
+      i.WriteHtonU16(lm.distance);
       for (std::vector<Ipv4Address>::const_iterator neigh_iter = lm.neighborInterfaceAddresses.begin ();
            neigh_iter != lm.neighborInterfaceAddresses.end (); neigh_iter++)
         {
@@ -470,11 +471,12 @@ MessageHeader::Hello::Deserialize(Buffer::Iterator start, uint32_t messageSize)
       //添加ETX、RLQ消息
       //lm.RLQ = i.ReadU8 ();
       //lm.ETX = i.ReadU8 ();
+      lm.distance = i.ReadNtohU16 ();
       //添加16bit数据 改为-6
-      //NS_ASSERT ((lmSize - 6) % IPV4_ADDRESS_SIZE == 0);
-      //for (int n = (lmSize - 6) / IPV4_ADDRESS_SIZE; n; --n)
-      NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
-      for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
+      NS_ASSERT ((lmSize - 6) % IPV4_ADDRESS_SIZE == 0);
+      for (int n = (lmSize - 6) / IPV4_ADDRESS_SIZE; n; --n)
+      //NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
+      //for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
         {
           lm.neighborInterfaceAddresses.push_back (Ipv4Address (i.ReadNtohU32 ()));
         }

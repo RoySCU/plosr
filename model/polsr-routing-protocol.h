@@ -66,7 +66,7 @@ struct RoutingTableEntry
   Ipv4Address nextAddr; ///< Address of the next hop.
   uint32_t interface; ///< Interface index
   uint32_t distance; ///< Distance in hops to the destination.
-
+  uint16_t gps_distance;///gps 实际距离
   RoutingTableEntry () : // default values
                          destAddr (), nextAddr (),
                          interface (0), distance (0) {};
@@ -199,11 +199,13 @@ private:
   void AddEntry (const Ipv4Address &dest,
                  const Ipv4Address &next,
                  uint32_t interface,
-                 uint32_t distance);
+                 uint32_t distance,
+                 uint16_t gps_distance);
   void AddEntry (const Ipv4Address &dest,
                  const Ipv4Address &next,
                  const Ipv4Address &interfaceAddress,
-                 uint32_t distance);
+                 uint32_t distance,
+                 uint16_t gps_distance);
   bool Lookup (const Ipv4Address &dest,
                RoutingTableEntry &outEntry) const;
   bool FindSendEntry (const RoutingTableEntry &entry,
@@ -348,7 +350,7 @@ private:
   Ptr<UniformRandomVariable> m_uniformRandomVariable;  
   
   Vector GetPosition(Ipv4Address adr);
-  double NextPositionDistanse(const NeighborTuple &neighbor){
+  double NextPositionDistance(const NeighborTuple &neighbor){
   
     PositionTuple pos = neighbor.neighborPosition;
     double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds();
@@ -367,7 +369,7 @@ private:
     //std::cout<<d_n<<std::endl;
     return d_n;
   }
-  double NextPositionDistanse(const PositionTuple &pos){
+  double NextPositionDistance(const PositionTuple &pos){
     double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds();
     double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds();
     
@@ -383,6 +385,16 @@ private:
     
     //std::cout<<d_n<<std::endl;
     return d_n;
+  }
+  double NextPositionDistance(const polsr::MessageHeader::Hello &hello){
+    Vector item_pos = hello.GetPosition();
+    Vector item_speed = hello.GetSpeed();
+    PositionTuple pos_t;
+    pos_t.gps_x = item_pos.x;
+    pos_t.gps_y = item_pos.y;
+    pos_t.speed_x = item_speed.x;
+    pos_t.speed_y = item_speed.y;
+    return NextPositionDistance(pos_t);
   }
 };
 
