@@ -1072,13 +1072,16 @@ RoutingProtocol::RoutingTableComputation ()
             //如果原本存在entry
             if(found_2hop_Entry){
               //如果距离更小 则替换
-              if(last_entry.gps_distance>nb2hop_tuple.distance){
+              if(last_entry.gps_distance>nb2hop_tuple.distance+300){
                 AddEntry (nb2hop_tuple.twoHopNeighborAddr,
                     entry.nextAddr,
                     entry.interface,
                     2,
                     nb2hop_tuple.distance);
+                //NS_LOG_UNCOND("last distance:"<<last_entry.gps_distance);
+                //NS_LOG_UNCOND("now distance:"<<nb2hop_tuple.distance);
               }
+              
               //NS_LOG_UNCOND("last twoHopNeighborAddr:"<<nb2hop_tuple.twoHopNeighborAddr
               //<<"nextAddr:"<<last_entry.nextAddr<<"distance:"<<NextPositionDistance(*last_neighbor));
               //NS_LOG_UNCOND("twoHopNeighborAddr:"<<nb2hop_tuple.twoHopNeighborAddr
