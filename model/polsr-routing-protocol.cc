@@ -1,4 +1,4 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+﻿/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2004 Francisco J. Ros 
  * Copyright (c) 2007 INESC Porto
@@ -594,17 +594,11 @@ RoutingProtocol::MprComputation ()
   // N is the subset of neighbors of the node, which are
   // neighbor "of the interface I"
   NeighborSet N;
-  //远距离邻居节点
-  NeighborSet N_FAR;
   for (NeighborSet::const_iterator neighbor = m_state.GetNeighbors ().begin ();
        neighbor != m_state.GetNeighbors ().end (); neighbor++)
     {
       if (neighbor->status == NeighborTuple::STATUS_SYM) // I think that we need this check
       {
-        //超过200 则存入另一个邻居集
-        if(NextPositionDistance(*neighbor)){
-          N_FAR.push_back (*neighbor);
-        }
           //std::cout<<"distance: "<<NextPositionDistance(*neighbor)<<std::endl;
         N.push_back (*neighbor);
       }
@@ -630,7 +624,6 @@ RoutingProtocol::MprComputation ()
       //  excluding:
       // (i)   the nodes only reachable by members of N with willingness WILL_NEVER
       bool ok = false;
-      bool test_flag = false;
       for (NeighborSet::const_iterator neigh = N.begin ();
            neigh != N.end (); neigh++)
       {
@@ -646,29 +639,7 @@ RoutingProtocol::MprComputation ()
                 ok = true;
                 break;
               }
-            test_flag = true;
           }
-      }
-      if(!test_flag)
-      {
-        /*for (NeighborSet::const_iterator neigh = N_FAR.begin ();
-           neigh != N_FAR.end (); neigh++)
-        {
-          if (neigh->neighborMainAddr == twoHopNeigh->neighborMainAddr)
-            {
-              if (neigh->willingness == OLSR_WILL_NEVER)
-                {
-                  ok = false;
-                  break;
-                }
-              else
-                {
-                  ok = true;
-                  break;
-                }
-              test_flag = true;
-            }
-        }*/
       }
       if (!ok)
       {
@@ -846,7 +817,7 @@ RoutingProtocol::MprComputation ()
                it2 != reachability[r].end (); it2++)
             {
               const NeighborTuple *nb_tuple = *it2;
-              if (max == NULL || nb_tuple->willingness > max->willingness)
+              if (max == NULL || NextPositionDistance(*nb_tuple) < NextPositionDistance(*max))
                 {
                   max = nb_tuple;
                   max_r = r;
@@ -1072,7 +1043,7 @@ RoutingProtocol::RoutingTableComputation ()
             //如果原本存在entry
             if(found_2hop_Entry){
               //如果距离更小 则替换
-              if(last_entry.gps_distance>nb2hop_tuple.distance+300){
+              if(last_entry.gps_distance>nb2hop_tuple.distance){
                 AddEntry (nb2hop_tuple.twoHopNeighborAddr,
                     entry.nextAddr,
                     entry.interface,
