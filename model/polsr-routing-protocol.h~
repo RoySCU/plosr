@@ -1,4 +1,4 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+﻿/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2004 Francisco J. Ros
  * Copyright (c) 2007 INESC Porto
@@ -205,7 +205,7 @@ private:
                  const Ipv4Address &next,
                  const Ipv4Address &interfaceAddress,
                  uint32_t distance,
-                uint16_t gps_distance);
+                 uint16_t gps_distance);
   bool Lookup (const Ipv4Address &dest,
                RoutingTableEntry &outEntry) const;
   bool FindSendEntry (const RoutingTableEntry &entry,
