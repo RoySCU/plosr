@@ -1072,7 +1072,7 @@ RoutingProtocol::RoutingTableComputation ()
             //如果原本存在entry
             if(found_2hop_Entry){
               //如果距离更小 则替换
-              if(last_entry.gps_distance>nb2hop_tuple.distance+200){
+              if(last_entry.gps_distance>nb2hop_tuple.distance+300){
                 AddEntry (nb2hop_tuple.twoHopNeighborAddr,
                     entry.nextAddr,
                     entry.interface,
