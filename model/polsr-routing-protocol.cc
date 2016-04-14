@@ -599,13 +599,6 @@ RoutingProtocol::MprComputation ()
     {
       if (neighbor->status == NeighborTuple::STATUS_SYM) // I think that we need this check
       {
-<<<<<<< HEAD
-        //超过200 则存入另一个邻居集
-        if(NextPositionDistance(*neighbor)>200){
-          N_FAR.push_back (*neighbor);
-        }
-=======
->>>>>>> 5bbeab77ba523786cd151347c1c4e69dd5a19dad
           //std::cout<<"distance: "<<NextPositionDistance(*neighbor)<<std::endl;
         N.push_back (*neighbor);
       }
