@@ -24,7 +24,7 @@
 ///
 /// \brief Implementation of OLSR agent and related classes.
 ///
-/// This is the main file of this software because %OLSR's behaviour is
+/// This is the main file of this software because %POLSR's behaviour is
 /// implemented here.
 ///
 
@@ -211,7 +211,6 @@ RoutingProtocol::RoutingProtocol ()
     m_tcTimer (Timer::CANCEL_ON_DESTROY),
     m_midTimer (Timer::CANCEL_ON_DESTROY),
     m_hnaTimer (Timer::CANCEL_ON_DESTROY),
-    m_posTimer(Timer::CANCEL_ON_DESTROY),
     m_queuedMessagesTimer (Timer::CANCEL_ON_DESTROY)
     
 {
@@ -234,7 +233,6 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
   m_tcTimer.SetFunction (&RoutingProtocol::TcTimerExpire, this);
   m_midTimer.SetFunction (&RoutingProtocol::MidTimerExpire, this);
   m_hnaTimer.SetFunction (&RoutingProtocol::HnaTimerExpire, this);
-  m_posTimer.SetFunction (&RoutingProtocol::PosTimerExpire, this);
   m_queuedMessagesTimer.SetFunction (&RoutingProtocol::SendQueuedMessages, this);
 
   m_packetSequenceNumber = OLSR_MAX_SEQ_NUM;
@@ -358,7 +356,6 @@ void RoutingProtocol::DoInitialize ()
       TcTimerExpire ();
       MidTimerExpire ();
       HnaTimerExpire ();
-      PosTimerExpire ();
       NS_LOG_DEBUG ("OLSR on node " << m_mainAddress << " started");
     }
 }
@@ -374,7 +371,7 @@ void RoutingProtocol::SetInterfaceExclusions (std::set<uint32_t> exceptions)
 }
 
 //
-// \brief Processes an incoming %OLSR packet following \RFC{3626} specification.
+// \brief Processes an incoming %POLSR packet following \RFC{3626} specification.
 void
 RoutingProtocol::RecvOlsr (Ptr<Socket> socket)
 {
@@ -1248,7 +1245,7 @@ RoutingProtocol::RoutingTableComputation ()
 /// Link sensing and population of the Neighbor Set, 2-hop Neighbor Set and MPR
 /// Selector Set are performed.
 ///
-/// \param msg the %OLSR message which contains the HELLO message.
+/// \param msg the %POLSR message which contains the HELLO message.
 /// \param receiver_iface the address of the interface where the message was received from.
 /// \param sender_iface the address of the interface where the message was sent from.
 ///
@@ -1312,7 +1309,7 @@ RoutingProtocol::ProcessHello (const polsr::MessageHeader &msg,
 /// The Topology Set is updated (if needed) with the information of
 /// the received TC message.
 ///
-/// \param msg the %OLSR message which contains the TC message.
+/// \param msg the %POLSR message which contains the TC message.
 /// \param sender_iface the address of the interface where the message was sent from.
 ///
 void
@@ -1407,7 +1404,7 @@ RoutingProtocol::ProcessTc (const polsr::MessageHeader &msg,
 /// The Interface Association Set is updated (if needed) with the information
 /// of the received MID message.
 ///
-/// \param msg the %OLSR message which contains the MID message.
+/// \param msg the %POLSR message which contains the MID message.
 /// \param sender_iface the address of the interface where the message was sent from.
 ///
 void
@@ -1486,7 +1483,7 @@ RoutingProtocol::ProcessMid (const polsr::MessageHeader &msg,
 /// The Host Network Association Set is updated (if needed) with the information
 /// of the received HNA message.
 ///
-/// \param msg the %OLSR message which contains the HNA message.
+/// \param msg the %POLSR message which contains the HNA message.
 /// \param sender_iface the address of the interface where the message was sent from.
 ///
 void
@@ -1551,8 +1548,8 @@ RoutingProtocol::ProcessHna (const polsr::MessageHeader &msg,
 ///
 /// See \RFC{3626} for details.
 ///
-/// \param p the %OLSR packet which has been received.
-/// \param msg the %OLSR message which must be forwarded.
+/// \param p the %POLSR packet which has been received.
+/// \param msg the %POLSR message which must be forwarded.
 /// \param dup_tuple NULL if the message has never been considered for forwarding,
 /// or a duplicate tuple in other case.
 /// \param local_iface the address of the interface where the message was received from.
@@ -1624,13 +1621,13 @@ RoutingProtocol::ForwardDefault (polsr::MessageHeader olsrMessage,
 }
 
 ///
-/// \brief Enques an %OLSR message which will be sent with a delay of (0, delay].
+/// \brief Enques an %POLSR message which will be sent with a delay of (0, delay].
 ///
-/// This buffering system is used in order to piggyback several %OLSR messages in
-/// a same %OLSR packet.
+/// This buffering system is used in order to piggyback several %POLSR messages in
+/// a same %POLSR packet.
 ///
-/// \param msg the %OLSR message which must be sent.
-/// \param delay maximum delay the %OLSR message is going to be buffered.
+/// \param msg the %POLSR message which must be sent.
+/// \param delay maximum delay the %POLSR message is going to be buffered.
 ///
 void
 RoutingProtocol::QueueMessage (const polsr::MessageHeader &message, Time delay)
@@ -1657,7 +1654,6 @@ RoutingProtocol::SendPacket (Ptr<Packet> packet,
 
   // Trace it
   m_txPacketTrace (header, containedMessages);
-
   // Send it
   for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator i =
          m_socketAddresses.begin (); i != m_socketAddresses.end (); i++)
@@ -1668,10 +1664,10 @@ RoutingProtocol::SendPacket (Ptr<Packet> packet,
 }
 
 ///
-/// \brief Creates as many %OLSR packets as needed in order to send all buffered
-/// %OLSR messages.
+/// \brief Creates as many %POLSR packets as needed in order to send all buffered
+/// %POLSR messages.
 ///
-/// Maximum number of messages which can be contained in an %OLSR packet is
+/// Maximum number of messages which can be contained in an %POLSR packet is
 /// dictated by OLSR_MAX_MSGS constant.
 ///
 void
@@ -1680,7 +1676,7 @@ RoutingProtocol::SendQueuedMessages ()
   Ptr<Packet> packet = Create<Packet> ();
   int numMessages = 0;
 
-  NS_LOG_DEBUG ("Olsr node " << m_mainAddress << ": SendQueuedMessages");
+  NS_LOG_DEBUG ("POlsr node " << m_mainAddress << ": SendQueuedMessages");
 
   MessageList msglist;
 
@@ -1711,7 +1707,7 @@ RoutingProtocol::SendQueuedMessages ()
 }
 
 ///
-/// \brief Creates a new %OLSR HELLO message which is buffered for being sent later on.
+/// \brief Creates a new %POLSR HELLO message which is buffered for being sent later on.
 ///
 void
 RoutingProtocol::SendHello ()
@@ -1733,7 +1729,7 @@ RoutingProtocol::SendHello ()
 
   //GPS信息
   //std::cout<<"IP:"<<m_mainAddress<<"\tPos:\t"<<GetPosition(m_mainAddress)<<std::endl;
-  hello.SetPosition(GetPosition(m_mainAddress),move_speed);
+  hello.SetPosition(GetPosition(m_mainAddress),GetVelocity(m_mainAddress));
   
   
   std::vector<polsr::MessageHeader::Hello::LinkMessage>
@@ -1828,7 +1824,7 @@ RoutingProtocol::SendHello ()
 }
 
 ///
-/// \brief Creates a new %OLSR TC message which is buffered for being sent later on.
+/// \brief Creates a new %POLSR TC message which is buffered for being sent later on.
 ///
 void
 RoutingProtocol::SendTc ()
@@ -1855,7 +1851,7 @@ RoutingProtocol::SendTc ()
 }
 
 ///
-/// \brief Creates a new %OLSR MID message which is buffered for being sent later on.
+/// \brief Creates a new %POLSR MID message which is buffered for being sent later on.
 ///
 void
 RoutingProtocol::SendMid ()
@@ -1899,7 +1895,7 @@ RoutingProtocol::SendMid ()
 }
 
 ///
-/// \brief Creates a new %OLSR HNA message which is buffered for being sent later on.
+/// \brief Creates a new %POLSR HNA message which is buffered for being sent later on.
 ///
 void
 RoutingProtocol::SendHna ()
@@ -2922,15 +2918,6 @@ RoutingProtocol::HnaTimerExpire ()
     }
   m_hnaTimer.Schedule (m_hnaInterval);
 }
-void 
-RoutingProtocol::PosTimerExpire ()
-{
-  Vector now = GetPosition(m_mainAddress);
-  move_speed = Vector((now.x-last_pos.x)/m_posInterval.GetSeconds(),
-    (now.y-last_pos.y)/m_posInterval.GetSeconds(),0);
-  last_pos = now;
-  m_posTimer.Schedule (m_posInterval);
-}
 ///
 /// \brief Removes tuple if expired. Else timer is rescheduled to expire at tuple.expirationTime.
 ///
@@ -3287,7 +3274,6 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
 
   Ipv4Address dst = header.GetDestination ();
   Ipv4Address origin = header.GetSource ();
-
   // Consume self-originated packets
   if (IsMyOwnAddress (origin) == true)
     {
@@ -3334,6 +3320,7 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
       uint32_t numOifAddresses = m_ipv4->GetNAddresses (interfaceIdx);
       NS_ASSERT (numOifAddresses > 0);
       Ipv4InterfaceAddress ifAddr;
+      //std::cout<<header.GetSource()<<std::endl;
       if (numOifAddresses == 1) {
           ifAddr = m_ipv4->GetAddress (interfaceIdx, 0);
         } else {
@@ -3348,12 +3335,23 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
                                  << ": RouteInput for dest=" << header.GetDestination ()
                                  << " --> nextHop=" << entry2.nextAddr
                                  << " interface=" << entry2.interface);
-
+      /*const NeighborTuple *nb_tuple = m_state.FindNeighborTuple(entry2.nextAddr);
+      
+      if(NextPositionDistance(*nb_tuple)>1500){
+        
+        std::cout<<"Olsr node " << m_mainAddress
+                                   << ": Distance=" << NextPositionDistance(*nb_tuple)
+                                   << ": RouteInput for dest=" << header.GetDestination ()
+                                   << " --> nextHop=" << entry2.nextAddr
+                                   << " interface=" << entry2.interface<<std::endl;
+      }
+      std::cout<<&ucb<<std::endl;*/
       ucb (rtentry, p, header);
       return true;
     }
   else
     {
+      
       if(m_hnaRoutingTable->RouteInput (p, header, idev, ucb, mcb, lcb, ecb))
         {
           return true;
@@ -3537,6 +3535,24 @@ Vector RoutingProtocol::GetPosition(Ipv4Address adr)
     //NS_LOG_UNCOND("Have " << ipv4->GetAddress (1, 0).GetLocal ());     
     if(ipv4->GetAddress (1, 0).GetLocal () == adr){
 	  return (*node->GetObject<MobilityModel>()).GetPosition ();
+	  }
+  }
+  Vector v;
+  return v;
+}
+
+Vector RoutingProtocol::GetVelocity(Ipv4Address adr)
+{
+  uint32_t n = NodeList().GetNNodes ();
+  uint32_t i;
+  Ptr<Node> node;
+  //NS_LOG_UNCOND("Position of " << adr);
+  for(i = 0; i < n; i++){
+    node = NodeList().GetNode (i);
+    Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
+    //NS_LOG_UNCOND("Have " << ipv4->GetAddress (1, 0).GetLocal ());     
+    if(ipv4->GetAddress (1, 0).GetLocal () == adr){
+	  return (*node->GetObject<MobilityModel>()).GetVelocity ();
 	  }
   }
   Vector v;

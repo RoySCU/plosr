@@ -137,7 +137,6 @@ private:
   std::set<uint32_t> m_interfaceExclusions;
   Ptr<Ipv4StaticRouting> m_routingTableAssociation;
   Vector last_pos;
-  Vector move_speed;
 public:
   std::set<uint32_t> GetInterfaceExclusions () const
   {
@@ -258,9 +257,6 @@ private:
 
   Timer m_hnaTimer;
   void HnaTimerExpire ();
-  //测试 速度信息
-  Timer m_posTimer;
-  void PosTimerExpire ();
   
   void DupTupleTimerExpire (Ipv4Address address, uint16_t sequenceNumber);
   bool m_linkTupleTimerFirstTime;
@@ -350,31 +346,17 @@ private:
   Ptr<UniformRandomVariable> m_uniformRandomVariable;  
   
   Vector GetPosition(Ipv4Address adr);
+  Vector GetVelocity(Ipv4Address adr);
   double NextPositionDistance(const NeighborTuple &neighbor){
-  
     PositionTuple pos = neighbor.neighborPosition;
-    double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds();
-    double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds();
-    
-    Vector my_pos = GetPosition(m_mainAddress);
-    Vector my_speed = move_speed;
-    double my_next_x = my_pos.x+my_speed.x*m_helloInterval.GetSeconds();
-    double my_next_y = my_pos.y+my_speed.y*m_helloInterval.GetSeconds();
-    
-    //预测下一次
-    double d_n_x = my_next_x-item_next_x;
-    double d_n_y = my_next_y-item_next_y;
-    double d_n = sqrt(d_n_x*d_n_x+d_n_y*d_n_y);
-    
-    //std::cout<<d_n<<std::endl;
-    return d_n;
+    return NextPositionDistance(pos);
   }
   double NextPositionDistance(const PositionTuple &pos){
     double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds()/2;
     double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds()/2;
     
     Vector my_pos = GetPosition(m_mainAddress);
-    Vector my_speed = move_speed;
+    Vector my_speed = GetVelocity(m_mainAddress);
     double my_next_x = my_pos.x+my_speed.x*m_helloInterval.GetSeconds()/2;
     double my_next_y = my_pos.y+my_speed.y*m_helloInterval.GetSeconds()/2;
     
