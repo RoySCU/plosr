@@ -1,4 +1,4 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+﻿/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2004 Francisco J. Ros
  * Copyright (c) 2007 INESC Porto
@@ -370,13 +370,13 @@ private:
     return d_n;
   }
   double NextPositionDistance(const PositionTuple &pos){
-    double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds();
-    double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds();
+    double item_next_x = pos.gps_x+pos.speed_x*m_helloInterval.GetSeconds()/2;
+    double item_next_y = pos.gps_y+pos.speed_y*m_helloInterval.GetSeconds()/2;
     
     Vector my_pos = GetPosition(m_mainAddress);
     Vector my_speed = move_speed;
-    double my_next_x = my_pos.x+my_speed.x*m_helloInterval.GetSeconds();
-    double my_next_y = my_pos.y+my_speed.y*m_helloInterval.GetSeconds();
+    double my_next_x = my_pos.x+my_speed.x*m_helloInterval.GetSeconds()/2;
+    double my_next_y = my_pos.y+my_speed.y*m_helloInterval.GetSeconds()/2;
     
     //预测下一次
     double d_n_x = my_next_x-item_next_x;
