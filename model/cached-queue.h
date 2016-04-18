@@ -16,10 +16,10 @@ public:
   typedef Ipv4RoutingProtocol::UnicastForwardCallback UnicastForwardCallback;
   typedef Ipv4RoutingProtocol::ErrorCallback ErrorCallback;
   /// c-tor
-  QueueEntry (Ptr<const Packet> pa = 0, Ipv4Header const & h = Ipv4Header (),
+  QueueEntry (Ptr<Ipv4Route> rentry =0, Ptr<const Packet> pa = 0, Ipv4Header const & h = Ipv4Header (),
               UnicastForwardCallback ucb = UnicastForwardCallback (),
               ErrorCallback ecb = ErrorCallback (), Time exp = Simulator::Now ()) :
-    m_packet (pa), m_header (h), m_ucb (ucb), m_ecb (ecb),
+    m_rentry(rentry), m_packet (pa), m_header (h), m_ucb (ucb), m_ecb (ecb),
     m_expire (exp + Simulator::Now ())
   {}
 
@@ -29,7 +29,7 @@ public:
    */
   bool operator== (QueueEntry const & o) const
   {
-    return ((m_packet == o.m_packet) && (m_header.GetDestination () == o.m_header.GetDestination ()) && (m_expire == o.m_expire));
+    return ((m_rentry == o.m_rentry) && (m_packet == o.m_packet) && (m_header.GetDestination () == o.m_header.GetDestination ()) && (m_expire == o.m_expire));
   }
 
   // Fields
@@ -43,9 +43,11 @@ public:
   void SetIpv4Header (Ipv4Header h) { m_header = h; }
   void SetExpireTime (Time exp) { m_expire = exp + Simulator::Now (); }
   Time GetExpireTime () const { return m_expire - Simulator::Now (); }
-
+  void SetREntry (Ptr<Ipv4Route> rentry) {m_rentry = rentry;}
+  void Send() const { m_ucb(m_rentry,m_packet,m_header); }
 private:
-  
+  //rentry
+  Ptr<Ipv4Route> m_rentry;
   /// Data packet
   Ptr<const Packet> m_packet;
   /// IP header
@@ -57,11 +59,11 @@ private:
   /// Expire time for queue entry
   Time m_expire;
 };
-class RequestQueue
+class CachedQueue
 {
 public:
   /// Default c-tor
-  RequestQueue (uint32_t maxLen, Time routeToQueueTimeout) :
+  CachedQueue (uint32_t maxLen, Time routeToQueueTimeout) :
     m_maxLen (maxLen), m_queueTimeout (routeToQueueTimeout)
   {
   }
@@ -75,7 +77,8 @@ public:
   bool Find (Ipv4Address dst);
   /// Number of entries
   uint32_t GetSize ();
-  
+  void Send();
+  void SendOnce();
   // Fields
   uint32_t GetMaxQueueLen () const { return m_maxLen; }
   void SetMaxQueueLen (uint32_t len) { m_maxLen = len; }

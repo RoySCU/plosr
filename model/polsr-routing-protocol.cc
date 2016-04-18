@@ -190,6 +190,10 @@ RoutingProtocol::GetTypeId (void)
                                     OLSR_WILL_DEFAULT, "default",
                                     OLSR_WILL_HIGH, "high",
                                     OLSR_WILL_ALWAYS, "always"))
+    .AddAttribute ("DelayDelievry", "Use delay delivery.",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RoutingProtocol::SetUseDelay),
+                   MakeBooleanChecker ())
     .AddTraceSource ("Rx", "Receive OLSR packet.",
                      MakeTraceSourceAccessor (&RoutingProtocol::m_rxPacketTrace),
                      "ns3::polsr::RoutingProtocol::PacketTxRxTracedCallback")
@@ -199,6 +203,7 @@ RoutingProtocol::GetTypeId (void)
     .AddTraceSource ("RoutingTableChanged", "The OLSR routing table has changed.",
                      MakeTraceSourceAccessor (&RoutingProtocol::m_routingTableChanged),
                      "ns3::polsr::RoutingProtocol::TableChangeTracedCallback")
+                  
   ;
   return tid;
 }
@@ -206,6 +211,7 @@ RoutingProtocol::GetTypeId (void)
 
 RoutingProtocol::RoutingProtocol ()
   : m_routingTableAssociation (0),
+    m_queue (1024, Seconds(10)),
     m_ipv4 (0),
     m_helloTimer (Timer::CANCEL_ON_DESTROY),
     m_tcTimer (Timer::CANCEL_ON_DESTROY),
@@ -1821,6 +1827,7 @@ RoutingProtocol::SendHello ()
   NS_LOG_DEBUG ("OLSR HELLO message size: " << int (msg.GetSerializedSize ())
                                             << " (with " << int (linkMessages.size ()) << " link messages)");
   QueueMessage (msg, JITTER);
+
 }
 
 ///
@@ -3331,22 +3338,28 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
       rtentry->SetGateway (entry2.nextAddr);
       rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
 
-      NS_LOG_DEBUG ("Olsr node " << m_mainAddress
+      NS_LOG_DEBUG ("POlsr node " << m_mainAddress
                                  << ": RouteInput for dest=" << header.GetDestination ()
                                  << " --> nextHop=" << entry2.nextAddr
                                  << " interface=" << entry2.interface);
-      /*const NeighborTuple *nb_tuple = m_state.FindNeighborTuple(entry2.nextAddr);
+      const NeighborTuple *nb_tuple = m_state.FindNeighborTuple(entry2.nextAddr);
       
-      if(NextPositionDistance(*nb_tuple)>1500){
-        
-        std::cout<<"Olsr node " << m_mainAddress
+      if(NextPositionDistance(*nb_tuple)>2000&&isComing(*nb_tuple)&&m_use_delay){
+        std::cout<<"POlsr node " << m_mainAddress
                                    << ": Distance=" << NextPositionDistance(*nb_tuple)
                                    << ": RouteInput for dest=" << header.GetDestination ()
                                    << " --> nextHop=" << entry2.nextAddr
                                    << " interface=" << entry2.interface<<std::endl;
+        
+        QueueEntry newEntry (rtentry,p, header, ucb, ecb);
+        m_queue.Enqueue(newEntry);
+        Simulator::Schedule (Simulator::Now()+
+          Seconds (m_uniformRandomVariable->GetValue (0,1)),
+            &RoutingProtocol::CachedQueueSendOnce,this);
       }
-      std::cout<<&ucb<<std::endl;*/
-      ucb (rtentry, p, header);
+      else{
+        ucb (rtentry, p, header);
+      }
       return true;
     }
   else

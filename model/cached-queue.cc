@@ -13,14 +13,14 @@ NS_LOG_COMPONENT_DEFINE ("PolsrQueue");
 namespace polsr
 {
 uint32_t
-RequestQueue::GetSize ()
+CachedQueue::GetSize ()
 {
   Purge ();
   return m_queue.size ();
 }
 
 bool
-RequestQueue::Enqueue (QueueEntry & entry)
+CachedQueue::Enqueue (QueueEntry & entry)
 {
   Purge ();
   for (std::vector<QueueEntry>::const_iterator i = m_queue.begin (); i
@@ -42,7 +42,7 @@ RequestQueue::Enqueue (QueueEntry & entry)
 }
 
 void
-RequestQueue::DropPacketWithDst (Ipv4Address dst)
+CachedQueue::DropPacketWithDst (Ipv4Address dst)
 {
   NS_LOG_FUNCTION (this << dst);
   Purge ();
@@ -55,11 +55,11 @@ RequestQueue::DropPacketWithDst (Ipv4Address dst)
         }
     }
   m_queue.erase (std::remove_if (m_queue.begin (), m_queue.end (),
-                                 std::bind2nd (std::ptr_fun (RequestQueue::IsEqual), dst)), m_queue.end ());
+                                 std::bind2nd (std::ptr_fun (CachedQueue::IsEqual), dst)), m_queue.end ());
 }
 
 bool
-RequestQueue::Dequeue (Ipv4Address dst, QueueEntry & entry)
+CachedQueue::Dequeue (Ipv4Address dst, QueueEntry & entry)
 {
   Purge ();
   for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i != m_queue.end (); ++i)
@@ -75,7 +75,7 @@ RequestQueue::Dequeue (Ipv4Address dst, QueueEntry & entry)
 }
 
 bool
-RequestQueue::Find (Ipv4Address dst)
+CachedQueue::Find (Ipv4Address dst)
 {
   for (std::vector<QueueEntry>::const_iterator i = m_queue.begin (); i
        != m_queue.end (); ++i)
@@ -96,7 +96,7 @@ struct IsExpired
 };
 
 void
-RequestQueue::Purge ()
+CachedQueue::Purge ()
 {
   IsExpired pred;
   for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i
@@ -112,7 +112,7 @@ RequestQueue::Purge ()
 }
 
 void
-RequestQueue::Drop (QueueEntry en, std::string reason)
+CachedQueue::Drop (QueueEntry en, std::string reason)
 {
   NS_LOG_LOGIC (reason << en.GetPacket ()->GetUid () << " " << en.GetIpv4Header ().GetDestination ());
   en.GetErrorCallback () (en.GetPacket (), en.GetIpv4Header (),
@@ -120,5 +120,26 @@ RequestQueue::Drop (QueueEntry en, std::string reason)
   return;
 }
 
+void
+CachedQueue::Send()
+{
+	for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i
+       != m_queue.end ();)
+  {
+  	i->Send();
+  	i = m_queue.erase(i);
+  }
+}
+void
+CachedQueue::SendOnce()
+{
+	for (std::vector<QueueEntry>::iterator i = m_queue.begin (); i
+       != m_queue.end ();)
+  {
+  	i->Send();
+  	m_queue.erase(i);
+  	break;
+  }
+}
 }
 }

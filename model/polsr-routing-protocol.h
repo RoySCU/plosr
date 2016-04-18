@@ -27,6 +27,7 @@
 #include "ns3/test.h"
 #include "polsr-state.h"
 #include "polsr-repositories.h"
+#include "cached-queue.h"
 
 #include "ns3/object.h"
 #include "ns3/packet.h"
@@ -88,6 +89,8 @@ public:
   RoutingProtocol ();
   virtual ~RoutingProtocol ();
 
+  
+  void CachedQueueSendOnce(){m_queue.SendOnce();}
   ///
   /// \brief Set the OLSR main address to the first address on the indicated
   ///        interface
@@ -137,6 +140,7 @@ private:
   std::set<uint32_t> m_interfaceExclusions;
   Ptr<Ipv4StaticRouting> m_routingTableAssociation;
   Vector last_pos;
+  
 public:
   std::set<uint32_t> GetInterfaceExclusions () const
   {
@@ -157,7 +161,7 @@ public:
    * \returns the internal HNA table
    */
   Ptr<const Ipv4StaticRouting> GetRoutingTableAssociation () const;
-
+  void SetUseDelay(bool is_use){m_use_delay = is_use;}
 protected:
   virtual void DoInitialize (void);
 private:
@@ -166,7 +170,9 @@ private:
   Ptr<Ipv4StaticRouting> m_hnaRoutingTable;
 
   EventGarbageCollector m_events;
-	
+  ///缓冲队列
+  CachedQueue m_queue;
+  bool m_use_delay;
   /// Packets sequence number counter.
   uint16_t m_packetSequenceNumber;
   /// Messages sequence number counter.
@@ -377,6 +383,22 @@ private:
     pos_t.speed_x = item_speed.x;
     pos_t.speed_y = item_speed.y;
     return NextPositionDistance(pos_t);
+  }
+  bool isComing(const NeighborTuple &neighbor){
+    PositionTuple pos = neighbor.neighborPosition;
+    return isComing(pos);
+  }
+  bool isComing(const PositionTuple &pos){
+    double d_next = NextPositionDistance(pos);
+    Vector my_pos = GetPosition(m_mainAddress);
+    double d_x = my_pos.x-pos.gps_x;
+    double d_y = my_pos.y-pos.gps_y;
+    double d_now = sqrt(d_x*d_x+d_y*d_y);
+    if(d_now>d_next){
+      return true;
+    }else{
+      return false;
+    }
   }
 };
 
