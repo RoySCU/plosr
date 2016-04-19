@@ -89,8 +89,48 @@ public:
   RoutingProtocol ();
   virtual ~RoutingProtocol ();
 
-  
-  void CachedQueueSendOnce(){m_queue.SendOnce();}
+  void QueueEntrySend(QueueEntry entry){
+    entry.Send();
+  }  
+  void CachedQueueSendOnce(){
+    //暂时保存用
+    std::vector<QueueEntry> outrange_queue;
+    std::vector<QueueEntry> &queue = m_queue.GetVector();
+    bool should_send = false;
+    //迭代扫描
+    for (std::vector<QueueEntry>::iterator iter = queue.begin (); 
+      iter!= queue.end ();){
+      //找到邻居表项
+      RoutingTableEntry entry1, entry2; 
+      if (Lookup (iter->GetIpv4Header().GetDestination (), entry1)){
+        bool foundSendEntry = FindSendEntry (entry1, entry2);
+        if(foundSendEntry){
+          iter->GetREntry()->SetGateway (entry2.nextAddr);
+          const NeighborTuple *nb_tuple = m_state.FindNeighborTuple(entry2.nextAddr);
+          //下一跳距离小于2000
+          if(NextPositionDistance(*nb_tuple)<1800){
+            should_send = true;
+          }
+        }
+      }
+      if(should_send){
+        std::cout<<"Time:"<<Simulator::Now().GetSeconds()
+          <<" next hop:"<<iter->GetREntry()->GetGateway()<<std::endl;
+        iter->Send();
+      }else{
+        outrange_queue.push_back(*iter);
+      }
+      iter = queue.erase(iter);
+    }
+    //将保存的队列拷贝至m_queue
+    for (std::vector<QueueEntry>::iterator iter = outrange_queue.begin (); 
+      iter!= outrange_queue.end ();iter++){
+      queue.push_back(*iter);
+    }
+    Simulator::Schedule (Seconds (1),
+            &RoutingProtocol::CachedQueueSendOnce,this);
+    //m_queue.SendOnce();
+  }
   ///
   /// \brief Set the OLSR main address to the first address on the indicated
   ///        interface

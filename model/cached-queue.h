@@ -44,6 +44,7 @@ public:
   void SetExpireTime (Time exp) { m_expire = exp + Simulator::Now (); }
   Time GetExpireTime () const { return m_expire - Simulator::Now (); }
   void SetREntry (Ptr<Ipv4Route> rentry) {m_rentry = rentry;}
+  Ptr<Ipv4Route>& GetREntry (){return m_rentry;}
   void Send() const { m_ucb(m_rentry,m_packet,m_header); }
 private:
   //rentry
@@ -84,7 +85,7 @@ public:
   void SetMaxQueueLen (uint32_t len) { m_maxLen = len; }
   Time GetQueueTimeout () const { return m_queueTimeout; }
   void SetQueueTimeout (Time t) { m_queueTimeout = t; }
-
+	std::vector<QueueEntry>& GetVector() { return m_queue;}
 private:
   
   std::vector<QueueEntry> m_queue;

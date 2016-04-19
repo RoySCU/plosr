@@ -221,7 +221,7 @@ RoutingProtocol::RoutingProtocol ()
     
 {
   m_uniformRandomVariable = CreateObject<UniformRandomVariable> ();
-
+  CachedQueueSendOnce();
   m_hnaRoutingTable = Create<Ipv4StaticRouting> ();
 }
 
@@ -3345,17 +3345,8 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
       const NeighborTuple *nb_tuple = m_state.FindNeighborTuple(entry2.nextAddr);
       
       if(NextPositionDistance(*nb_tuple)>2000&&isComing(*nb_tuple)&&m_use_delay){
-        std::cout<<"POlsr node " << m_mainAddress
-                                   << ": Distance=" << NextPositionDistance(*nb_tuple)
-                                   << ": RouteInput for dest=" << header.GetDestination ()
-                                   << " --> nextHop=" << entry2.nextAddr
-                                   << " interface=" << entry2.interface<<std::endl;
-        
         QueueEntry newEntry (rtentry,p, header, ucb, ecb);
         m_queue.Enqueue(newEntry);
-        Simulator::Schedule (Simulator::Now()+
-          Seconds (m_uniformRandomVariable->GetValue (0,1)),
-            &RoutingProtocol::CachedQueueSendOnce,this);
       }
       else{
         ucb (rtentry, p, header);

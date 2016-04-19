@@ -15,27 +15,20 @@ namespace polsr
 uint32_t
 CachedQueue::GetSize ()
 {
-  Purge ();
   return m_queue.size ();
 }
 
 bool
 CachedQueue::Enqueue (QueueEntry & entry)
 {
-  Purge ();
   for (std::vector<QueueEntry>::const_iterator i = m_queue.begin (); i
        != m_queue.end (); ++i)
     {
       if ((i->GetPacket ()->GetUid () == entry.GetPacket ()->GetUid ())
           && (i->GetIpv4Header ().GetDestination ()
               == entry.GetIpv4Header ().GetDestination ()))
+        std::cout<<"already has this packet!"<<std::endl;
         return false;
-    }
-  entry.SetExpireTime (m_queueTimeout);
-  if (m_queue.size () == m_maxLen)
-    {
-      Drop (m_queue.front (), "Drop the most aged packet"); // Drop the most aged packet
-      m_queue.erase (m_queue.begin ());
     }
   m_queue.push_back (entry);
   return true;
@@ -130,6 +123,7 @@ CachedQueue::Send()
   	i = m_queue.erase(i);
   }
 }
+
 void
 CachedQueue::SendOnce()
 {
@@ -141,5 +135,6 @@ CachedQueue::SendOnce()
   	break;
   }
 }
+
 }
 }
