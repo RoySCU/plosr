@@ -243,6 +243,14 @@ public:
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |   Link Code   |   Reserved    |       Link Message Size       |
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |             位置x              |             位置y              |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |                              速度x                             |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |                              速度y                             |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //       |   Link Code   |   Reserved    |       Link Message Size       |
+  //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |                  Neighbor Interface Address                   |
   //       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //       |                  Neighbor Interface Address                   |
@@ -263,8 +271,7 @@ public:
   {
     struct LinkMessage {
       uint8_t linkCode;
-      std::vector<Ipv4Address> neighborInterfaceAddresses;
-      //璺濈
+      std::vector<Ipv4Address> neighborInterfaceAddresses; 
       uint16_t distance;
       void setDistance(uint16_t distance){
         this->distance = distance;
